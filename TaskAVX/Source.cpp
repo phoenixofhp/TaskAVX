@@ -2,15 +2,15 @@
 #include <chrono>
 #include <immintrin.h>
 
-uint32_t NonOptFuncLoopExec = 0;
-uint32_t OptFuncLoopExec = 0;
+uint32_t NonOptFuncMult = 0;
+uint32_t OptFuncMult = 0;
 
 static void firNonOptimized(float* x, float* y, float* b, size_t n) {
 	std::reverse(b, b + n);
 	for (size_t i = 0; i < n; i++) {
 		for (size_t j = 0; j <= i; j++) {
 			y[i] += b[j] * x[j];
-			NonOptFuncLoopExec++;
+			NonOptFuncMult++;
 		}
 	}
 	std::reverse(b, b + n);
@@ -31,11 +31,11 @@ static void firOptimized(float* x, float* y, float* b, size_t n) {
 			big_group_mult = _mm256_mul_ps(big_group_x, big_group_h);
 			float* big_group_result = (float*)&big_group_mult;
 			for (size_t k = 0; k < 8; k++) y[i] += big_group_result[k];
-			OptFuncLoopExec++;
+			OptFuncMult++;
 		}
 		for (size_t j = (avx256_group_operations * 8); j < i + 1; j++) {
 			y[i] += x[j] * b[j];
-			OptFuncLoopExec++;
+			OptFuncMult++;
 		}
 	}
 	std::reverse(b, b + n);
@@ -82,7 +82,7 @@ int main() {
 		elapsed_time_opt = std::chrono::duration<double, std::milli>(t2 - t1).count() - t_diff;
 
 		std::cout << i << '\t' << elapsed_time_non_opt << "\t\t" << elapsed_time_opt\
-			<< "\t\t" << NonOptFuncLoopExec << "\t\t" << OptFuncLoopExec << "\t\t" << std::equal(y, y + i, y_comp) << '\n';
+			<< "\t\t" << NonOptFuncMult << "\t\t" << OptFuncMult << "\t\t" << std::equal(y, y + i, y_comp) << '\n';
 
 		delete[] x;
 		delete[] y;
